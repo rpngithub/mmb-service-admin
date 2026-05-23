@@ -21,6 +21,7 @@ export const UserBusinessesPage = lazy(() => import('@/pages/userBusinesses/User
 export const UserDesignsPage = lazy(() => import('@/pages/userDesigns/UserDesignsPage'))
 export const UploadUserDesignPage = lazy(() => import('@/pages/userDesigns/UploadUserDesignPage'))
 export const SupportCustomersPage = lazy(() => import('@/pages/support/SupportCustomersPage'))
+export const InquiriesPage = lazy(() => import('@/pages/inquiries/InquiriesPage'))
 export const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'))
 
 export const ROUTES = [
@@ -36,5 +37,6 @@ export const ROUTES = [
   { path: '/user-designs', component: UserDesignsPage, roles: [ADMIN, DESIGNER] },
   { path: '/user-designs/upload', component: UploadUserDesignPage, roles: [DESIGNER] },
   { path: '/support/customers', component: SupportCustomersPage, roles: [CUSTOMER_SUPPORT] },
+  { path: '/inquiries', component: InquiriesPage, roles: [ADMIN, CUSTOMER_SUPPORT] },
   { path: '/profile', component: ProfilePage, roles: ALL_STAFF },
 ]

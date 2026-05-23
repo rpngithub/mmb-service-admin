@@ -3,7 +3,7 @@ import { hasRole, hasAnyRole } from '@/utils/roleUtils'
 import { ROLES } from '@/config/constants'
 
 const useAuth = () => {
-  const { user, accessToken, isAuthenticated, setAuth, setUser, setTokens, logout } = useAuthStore()
+  const { user, accessToken, isAuthenticated, setAuth, setUser, logout } = useAuthStore()
 
   return {
     user,
@@ -11,7 +11,6 @@ const useAuth = () => {
     isAuthenticated,
     setAuth,
     setUser,
-    setTokens,
     logout,
     isAdmin: hasRole(user, ROLES.ADMIN),
     isDesigner: hasRole(user, ROLES.DESIGNER),

@@ -8,6 +8,7 @@ import ImageIcon from '@rsuite/icons/Image'
 import FolderIcon from '@rsuite/icons/Folder'
 import StorageIcon from '@rsuite/icons/Storage'
 import UserInfoIcon from '@rsuite/icons/UserInfo'
+import EmailIcon from '@rsuite/icons/Email'
 import useAuth from '@/hooks/useAuth'
 import { ROLES } from '@/config/constants'
 import useUiStore from '@/store/uiStore'
@@ -21,10 +22,10 @@ const NAV_ITEMS = [
   { key: '/subscriptions', label: 'Subscriptions', icon: <DetailIcon />, roles: [ADMIN] },
   { key: '/businesses', label: 'Businesses', icon: <StorageIcon />, roles: [ADMIN] },
   { key: '/user-businesses', label: 'User Businesses', icon: <FolderIcon />, roles: [ADMIN] },
-  { key: '/designs', label: 'Designs', icon: <ImageIcon />, roles: [ADMIN, DESIGNER] },
   { key: '/user-designs', label: 'User Designs', icon: <ImageIcon />, roles: [ADMIN, DESIGNER] },
   { key: '/user-designs/upload', label: 'Upload Design', icon: <ImageIcon />, roles: [DESIGNER] },
   { key: '/support/customers', label: 'Customers', icon: <PeopleIcon />, roles: [CUSTOMER_SUPPORT] },
+  { key: '/inquiries', label: 'Inquiries', icon: <EmailIcon />, roles: [ADMIN, CUSTOMER_SUPPORT] },
   { key: '/profile', label: 'Profile', icon: <UserInfoIcon />, roles: [ADMIN, DESIGNER, CUSTOMER_SUPPORT] },
 ]
 
@@ -39,39 +40,52 @@ const Sidebar = () => {
   )
 
   return (
-    <Sidenav
-      expanded={!sidebarCollapsed}
-      style={{ height: '100%', overflowY: 'auto' }}
-    >
-      <Sidenav.Header>
-        <div
-          style={{
-            padding: sidebarCollapsed ? '18px 0' : '18px 20px',
-            textAlign: sidebarCollapsed ? 'center' : 'left',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-          }}
-        >
-          {!sidebarCollapsed && (
-            <>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>MakeMyBrand</div>
-              <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginTop: 2 }}>Admin Console</div>
-            </>
-          )}
-          {sidebarCollapsed && (
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>MB</div>
-          )}
-        </div>
-      </Sidenav.Header>
-      <Sidenav.Body>
-        <Nav activeKey={pathname} onSelect={(key) => navigate(key)}>
-          {visibleItems.map((item) => (
-            <Nav.Item key={item.key} eventKey={item.key} icon={item.icon}>
-              {item.label}
-            </Nav.Item>
-          ))}
-        </Nav>
-      </Sidenav.Body>
-    </Sidenav>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Logo header — explicit white bg to match RSuite's Sidenav default */}
+      <div style={{
+        padding: sidebarCollapsed ? '14px 0' : '7px 20px',
+        borderBottom: '1px solid #e5e5ea',
+        background: '#f7f8fc',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+      }}>
+        {sidebarCollapsed ? (
+          <img
+            src="/apple-touch-icon.png"
+            alt="MakeMyBrand"
+            style={{ height: 28, width: 28, objectFit: 'contain', display: 'block' }}
+          />
+        ) : (
+          <div>
+            <img
+              src="/images/mmb-logo.svg"
+              alt="MakeMyBrand"
+              style={{ height: 40, display: 'block' }}
+            />
+            {/*<div style={{ color: '#000', fontSize: 11, marginTop: 6 }}>
+              Admin Console
+            </div>*/}
+          </div>
+        )}
+      </div>
+
+      {/* Nav items */}
+      <Sidenav expanded={!sidebarCollapsed} style={{ flex: 1, overflowY: 'auto' }}>
+        <Sidenav.Body>
+          <Nav activeKey={pathname} onSelect={(key) => navigate(key)}>
+            {visibleItems.map((item) => (
+              <Nav.Item key={item.key} eventKey={item.key} icon={item.icon}>
+                {item.label}
+              </Nav.Item>
+            ))}
+          </Nav>
+        </Sidenav.Body>
+      </Sidenav>
+
+    </div>
   )
 }
 
