@@ -10,19 +10,13 @@ const useAuthStore = create(
       refreshToken: null,
       isAuthenticated: false,
 
+      // Called on login AND after a silent token refresh
       setAuth: (accessToken) => {
         persistTokens(accessToken)
         set({ accessToken, isAuthenticated: true })
       },
 
       setUser: (user) => set({ user }),
-
-      setTokens: (accessToken) => {
-        persistTokens(accessToken)
-        set((s) => ({
-          accessToken,
-        }))
-      },
 
       logout: () => {
         clearTokens()

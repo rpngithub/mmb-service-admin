@@ -11,7 +11,7 @@ const roleOptions = [
   { label: 'User', value: ROLES.USER },
 ]
 
-const EMPTY = { name: '', email: '', password: '', role: ROLES.USER }
+const EMPTY = { name: '', email: '', mobile: '', password: '', role: ROLES.USER }
 
 const UserFormModal = ({ open, onClose, onSuccess, user }) => {
   const toaster = useToaster()
@@ -20,16 +20,16 @@ const UserFormModal = ({ open, onClose, onSuccess, user }) => {
   const isEdit = !!user
 
   useEffect(() => {
-    if (user) setFormValue({ name: user.name || '', email: user.email || '', password: '', role: user.role || ROLES.USER })
+    if (user) setFormValue({ name: user.name || '', email: user.email || '', mobile: user.mobile || '', password: '', role: user.role || ROLES.USER })
     else setFormValue(EMPTY)
   }, [user, open])
 
   const handleSubmit = async () => {
-    if (!formValue.name || !formValue.email) return
+    if (!formValue.name || !formValue.email || formValue.mobile.length !== 10) return
     setLoading(true)
     try {
       if (isEdit) {
-        const payload = { name: formValue.name, email: formValue.email, role: formValue.role }
+        const payload = { name: formValue.name, email: formValue.email, mobile: formValue.mobile, role: formValue.role }
         if (formValue.password) payload.password = formValue.password
         await updateUser(user.id, payload)
       } else {
@@ -59,6 +59,9 @@ const UserFormModal = ({ open, onClose, onSuccess, user }) => {
           <FormField label="Email" name="email" required>
             <Input name="email" type="email" value={formValue.email} onChange={(v) => setFormValue((f) => ({ ...f, email: v }))} />
           </FormField>
+          <FormField label="Mobile" name="mobile" required>
+            <Input name="mobile" type="tel" value={formValue.mobile} onChange={(v) => { const digits = v.replace(/\D/g, '').slice(0, 10); setFormValue((f) => ({ ...f, mobile: digits })) }} placeholder="10-digit mobile number" maxLength={10} />
+          </FormField>
           <FormField label="Password" name="password" required={!isEdit}>
             <Input name="password" type="password" value={formValue.password} onChange={(v) => setFormValue((f) => ({ ...f, password: v }))} placeholder={isEdit ? 'Leave blank to keep current' : ''} />
           </FormField>
@@ -66,13 +69,11 @@ const UserFormModal = ({ open, onClose, onSuccess, user }) => {
             <SelectPicker data={roleOptions} value={formValue.role} onChange={(v) => setFormValue((f) => ({ ...f, role: v }))} block />
           </FormField>
         </Form>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24, paddingTop: 16, borderTop: '1px solid #e5e5ea', position: 'sticky', bottom: 0, background: '#fff' }}>
+          <Button onClick={onClose} appearance="subtle">Cancel</Button>
+          <Button onClick={handleSubmit} appearance="primary" loading={loading}>{isEdit ? 'Update' : 'Create'}</Button>
+        </div>
       </Drawer.Body>
-      <Drawer.Actions>
-        <Button onClick={onClose} appearance="subtle">Cancel</Button>
-        <Button onClick={handleSubmit} appearance="primary" loading={loading}>
-          {isEdit ? 'Update' : 'Create'}
-        </Button>
-      </Drawer.Actions>
     </Drawer>
   )
 }

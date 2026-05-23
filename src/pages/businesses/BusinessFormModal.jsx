@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Drawer, Input, Button, useToaster, Message } from 'rsuite'
+import { Drawer, Form, Input, Button, useToaster, Message } from 'rsuite'
 import FormField from '@/components/common/FormField'
 import { createBusiness, updateBusiness } from '@/api/businessesApi'
 
@@ -35,17 +35,19 @@ const BusinessFormModal = ({ open, onClose, onSuccess, business }) => {
     <Drawer open={open} onClose={onClose} size="sm">
       <Drawer.Header><Drawer.Title>{isEdit ? 'Edit Business' : 'Create Business'}</Drawer.Title></Drawer.Header>
       <Drawer.Body>
-        <FormField label="Name" name="name" required>
-          <Input value={form.name} onChange={set('name')} />
-        </FormField>
-        <FormField label="Description" name="description">
-          <Input as="textarea" rows={3} value={form.description} onChange={set('description')} />
-        </FormField>
+        <Form layout="vertical" fluid>
+          <FormField label="Name" name="name" required>
+            <Input value={form.name} onChange={set('name')} />
+          </FormField>
+          <FormField label="Description" name="description">
+            <Input as="textarea" rows={3} value={form.description} onChange={set('description')} />
+          </FormField>
+        </Form>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24, paddingTop: 16, borderTop: '1px solid #e5e5ea', position: 'sticky', bottom: 0, background: '#fff' }}>
+          <Button onClick={onClose} appearance="subtle">Cancel</Button>
+          <Button onClick={handleSubmit} appearance="primary" loading={loading}>{isEdit ? 'Update' : 'Create'}</Button>
+        </div>
       </Drawer.Body>
-      <Drawer.Actions>
-        <Button onClick={onClose} appearance="subtle">Cancel</Button>
-        <Button onClick={handleSubmit} appearance="primary" loading={loading}>{isEdit ? 'Update' : 'Create'}</Button>
-      </Drawer.Actions>
     </Drawer>
   )
 }

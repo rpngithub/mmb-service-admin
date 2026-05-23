@@ -35,6 +35,7 @@ const SubscriptionDetailPage = () => {
         <Stack spacing={32} wrap>
           <div><div style={{ color: '#8e8e93', fontSize: 12 }}>ID</div><strong>{sub.id}</strong></div>
           <div><div style={{ color: '#8e8e93', fontSize: 12 }}>User</div>{sub.user?.name || sub.user_id}</div>
+          <div><div style={{ color: '#8e8e93', fontSize: 12 }}>User Email</div>{sub.user?.email}</div>
           <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Plan</div>{sub.plan?.name || sub.plan_id}</div>
           <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Price</div>{formatCurrency(sub.plan?.price)}</div>
           <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Status</div><StatusBadge status={sub.status} /></div>
@@ -42,6 +43,26 @@ const SubscriptionDetailPage = () => {
           <div><div style={{ color: '#8e8e93', fontSize: 12 }}>End Date</div>{formatDate(sub.end_date)}</div>
           <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Created</div>{formatDate(sub.created_at)}</div>
         </Stack>
+      </Panel>
+      <Panel bordered header="Payment Info" style={{ background: '#fff', marginTop: 16 }}>
+        {sub.payment ? (
+          <Stack spacing={32} wrap>
+            <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Payment ID</div><strong>{sub.payment.id}</strong></div>
+            <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Amount</div>{formatCurrency(sub.payment.amount)}</div>
+            <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Status</div><StatusBadge status={sub.payment.status} /></div>
+            <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Method</div>{sub.payment.method}</div>
+            {sub.payment.order && (
+              <>
+                <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Invoice ID</div>{sub.payment.order.invoice_id}</div>
+                <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Order Amount</div>{formatCurrency(sub.payment.order.amount)}</div>
+                <div><div style={{ color: '#8e8e93', fontSize: 12 }}>GST</div>{formatCurrency(sub.payment.order.gst)}</div>
+                <div><div style={{ color: '#8e8e93', fontSize: 12 }}>Order Status</div><StatusBadge status={sub.payment.order.status} /></div>
+              </>
+            )}
+          </Stack>
+        ) : (
+          <div style={{ color: '#8e8e93', fontSize: 13 }}>Free trial — no payment</div>
+        )}
       </Panel>
     </div>
   )

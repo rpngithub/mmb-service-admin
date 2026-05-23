@@ -52,11 +52,11 @@ const UserDesignsPage = () => {
 
   const handleDownload = async (row) => {
     try {
-      const { data } = await getUserDesignFile(row.id)
+      const { data } = await getUserDesignFile(row.mnemonic_id)
       const url = URL.createObjectURL(data)
       const a = document.createElement('a')
       a.href = url
-      a.download = `design-${row.id}`
+      a.download = `design-${row.mnemonic_id}`
       a.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -67,7 +67,7 @@ const UserDesignsPage = () => {
   const handleDelete = async () => {
     setDeleteLoading(true)
     try {
-      await deleteUserDesign(deleteTarget.id)
+      await deleteUserDesign(deleteTarget.mnemonic_id)
       toaster.push(<Message type="success" showIcon closable>Deleted</Message>, { placement: 'topCenter' })
       setDeleteTarget(null); fetch()
     } catch {
@@ -101,9 +101,9 @@ const UserDesignsPage = () => {
         </Stack>
         <Table data={designs} loading={loading} height={500} bordered cellBordered rowKey="id">
           <Column width={80}><HeaderCell>ID</HeaderCell><Cell dataKey="id" /></Column>
-          <Column flexGrow={1} minWidth={160}><HeaderCell>Brand / Business</HeaderCell><Cell>{(row) => row.userBusiness?.brand_name || row.user_business_id}</Cell></Column>
-          <Column flexGrow={2} minWidth={180}><HeaderCell>Description</HeaderCell><Cell dataKey="description" /></Column>
-          <Column width={120}><HeaderCell>Visibility</HeaderCell><Cell>{(row) => <StatusBadge status={row.visibility} />}</Cell></Column>
+          <Column flexGrow={1} minWidth={160}><HeaderCell>Brand / Business</HeaderCell><Cell>{(row) => row.user_business?.brand_name || row.user_business_id}</Cell></Column>
+          <Column flexGrow={2} minWidth={180}><HeaderCell>Description</HeaderCell><Cell>{(row) => row.design?.description || ''}</Cell></Column>
+          <Column width={120}><HeaderCell>Visibility</HeaderCell><Cell>{(row) => <StatusBadge status={row.design?.visibility} />}</Cell></Column>
           <Column width={120}><HeaderCell>Uploaded</HeaderCell><Cell>{(row) => formatDate(row.created_at)}</Cell></Column>
           <Column width={110} fixed="right"><HeaderCell>Actions</HeaderCell>
             <Cell>

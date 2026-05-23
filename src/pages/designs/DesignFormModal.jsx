@@ -53,11 +53,11 @@ const DesignFormModal = ({ open, onClose, onSuccess, design }) => {
         <FormField label="Visibility" name="visibility" required>
           <SelectPicker data={VISIBILITY_OPTIONS} value={form.visibility} onChange={set('visibility')} block cleanable={false} />
         </FormField>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24, paddingTop: 16, borderTop: '1px solid #e5e5ea', position: 'sticky', bottom: 0, background: '#fff' }}>
+          <Button onClick={onClose} appearance="subtle">Cancel</Button>
+          <Button onClick={handleSubmit} appearance="primary" loading={loading}>{isEdit ? 'Update' : 'Create'}</Button>
+        </div>
       </Drawer.Body>
-      <Drawer.Actions>
-        <Button onClick={onClose} appearance="subtle">Cancel</Button>
-        <Button onClick={handleSubmit} appearance="primary" loading={loading}>{isEdit ? 'Update' : 'Create'}</Button>
-      </Drawer.Actions>
     </Drawer>
   )
 }

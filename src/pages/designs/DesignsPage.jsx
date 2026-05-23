@@ -63,6 +63,7 @@ const DesignsPage = () => {
         <Table data={designs} loading={loading} height={500} bordered cellBordered rowKey="id">
           <Column flexGrow={1} minWidth={180}><HeaderCell>Title</HeaderCell><Cell dataKey="title" /></Column>
           <Column flexGrow={2} minWidth={200}><HeaderCell>Description</HeaderCell><Cell dataKey="description" /></Column>
+          <Column flexGrow={1} minWidth={140}><HeaderCell>Created By</HeaderCell><Cell>{(row) => row.creator?.name || row.created_by}</Cell></Column>
           <Column width={130}><HeaderCell>Visibility</HeaderCell><Cell>{(row) => <StatusBadge status={row.visibility} />}</Cell></Column>
           <Column width={120}><HeaderCell>Created</HeaderCell><Cell>{(row) => formatDate(row.created_at)}</Cell></Column>
           <Column width={100} fixed="right"><HeaderCell>Actions</HeaderCell>

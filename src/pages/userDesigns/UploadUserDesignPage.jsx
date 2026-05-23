@@ -1,268 +1,239 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Steps, Panel, Button, SelectPicker, RadioGroup, Radio,
-  Message, Stack, Input, Uploader, useToaster, Loader
+  Panel, Button, SelectPicker, Message, Input, Uploader,
+  useToaster, Loader, List, Divider, Tag
 } from 'rsuite'
 import PageHeader from '@/components/common/PageHeader'
-import { getUsers } from '@/api/usersApi'
 import { getUserBusinesses } from '@/api/userBusinessesApi'
 import { getSubscriptions } from '@/api/subscriptionsApi'
 import { uploadUserDesign } from '@/api/userDesignsApi'
-import { ROLES } from '@/config/constants'
-import { useEffect } from 'react'
 
-const TOTAL_STEPS = 4
+const isNotExpired = (sub) => {
+  if (!sub.end_date) return true
+  return new Date(sub.end_date) > new Date()
+}
 
 const UploadUserDesignPage = () => {
   const navigate = useNavigate()
   const toaster = useToaster()
-  const [step, setStep] = useState(0)
-  const [ctx, setCtx] = useState({ userId: null, userName: '', userBusinessId: null, brandName: '', subscription: null })
 
-  // Step 1 state
-  const [users, setUsers] = useState([])
-  const [usersLoading, setUsersLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [activeSubs, setActiveSubs] = useState([])
+  const [freeTrials, setFreeTrials] = useState([])
+  const [allBusinesses, setAllBusinesses] = useState([])
 
-  // Step 2 state
+  const [selectedEntry, setSelectedEntry] = useState(null)
   const [businesses, setBusinesses] = useState([])
-  const [bizLoading, setBizLoading] = useState(false)
   const [selectedBizId, setSelectedBizId] = useState(null)
 
-  // Step 3 state
-  const [subLoading, setSubLoading] = useState(false)
-  const [activeSub, setActiveSub] = useState(null)
-  const [subChecked, setSubChecked] = useState(false)
-
-  // Step 4 state
   const [description, setDescription] = useState('')
   const [fileList, setFileList] = useState([])
   const [uploading, setUploading] = useState(false)
 
-  // Load users on mount
   useEffect(() => {
-    setUsersLoading(true)
-    getUsers()
-      .then(({ data }) => {
-        const all = data?.users || data || []
-        const customers = all.filter((u) => u.role === ROLES.USER)
-        setUsers(customers.map((u) => ({ label: `${u.name} – ${u.email}`, value: u.id, name: u.name })))
+    setLoading(true)
+    Promise.all([getSubscriptions(), getUserBusinesses()])
+      .then(([subRes, bizRes]) => {
+        const all = subRes.data?.subscriptions || subRes.data || []
+        setActiveSubs(all.filter((s) => s.status === 'active' && isNotExpired(s)))
+        setFreeTrials(all.filter((s) => s.status === 'free_trial' && isNotExpired(s)))
+        setAllBusinesses(bizRes.data?.userBusinesses || bizRes.data || [])
       })
       .catch(() => {})
-      .finally(() => setUsersLoading(false))
+      .finally(() => setLoading(false))
   }, [])
 
-  // Load businesses when user selected and on step 2
-  useEffect(() => {
-    if (step !== 1 || !ctx.userId) return
-    setBizLoading(true)
-    getUserBusinesses({ user_id: ctx.userId })
-      .then(({ data }) => setBusinesses(data?.userBusinesses || data || []))
-      .catch(() => {})
-      .finally(() => setBizLoading(false))
-  }, [step, ctx.userId])
-
-  // Check subscription when on step 3
-  useEffect(() => {
-    if (step !== 2 || !ctx.userBusinessId) return
-    setSubLoading(true)
-    setSubChecked(false)
-    getSubscriptions({ user_business_id: ctx.userBusinessId })
-      .then(({ data }) => {
-        const subs = data?.subscriptions || data || []
-        const found = subs.find((s) => s.status === 'active' || s.status === 'free_trial')
-        setActiveSub(found || null)
-        setSubChecked(true)
-      })
-      .catch(() => { setActiveSub(null); setSubChecked(true) })
-      .finally(() => setSubLoading(false))
-  }, [step, ctx.userBusinessId])
-
-  const goNext = () => setStep((s) => s + 1)
-  const goBack = () => setStep((s) => s - 1)
-
-  const handleSelectUser = (userId) => {
-    const user = users.find((u) => u.value === userId)
-    setCtx((c) => ({ ...c, userId, userName: user?.name || '' }))
+  const handleSelectEntry = (entry) => {
+    setSelectedEntry(entry)
     setSelectedBizId(null)
-  }
-
-  const handleSelectBusiness = (bizId) => {
-    setSelectedBizId(bizId)
-    const biz = businesses.find((b) => b.id === bizId)
-    setCtx((c) => ({ ...c, userBusinessId: bizId, brandName: biz?.brand_name || '' }))
+    setFileList([])
+    setDescription('')
+    setBusinesses(allBusinesses.filter((b) => b.user_id === entry.userId))
   }
 
   const handleUpload = async () => {
-    if (!fileList.length) return
+    if (!fileList.length || !selectedBizId) return
     setUploading(true)
     try {
       const formData = new FormData()
-      formData.append('user_business_id', ctx.userBusinessId)
+      formData.append('user_business_id', selectedBizId)
       formData.append('description', description)
       formData.append('visibility', 'private')
       fileList.forEach((f) => formData.append('files', f.blobFile))
       await uploadUserDesign(formData)
-      toaster.push(<Message type="success" showIcon closable>Design uploaded successfully!</Message>, { placement: 'topCenter' })
+      toaster.push(
+        <Message type="success" showIcon closable>Design uploaded successfully!</Message>,
+        { placement: 'topCenter' }
+      )
       navigate('/user-designs')
     } catch (err) {
-      toaster.push(<Message type="error" showIcon closable>{err.response?.data?.message || 'Upload failed'}</Message>, { placement: 'topCenter' })
+      toaster.push(
+        <Message type="error" showIcon closable>{err.response?.data?.message || 'Upload failed'}</Message>,
+        { placement: 'topCenter' }
+      )
     } finally {
       setUploading(false)
     }
   }
 
+  const renderEntries = (entries, isTrial) => {
+    if (entries.length === 0) {
+      return (
+        <div style={{ color: '#8e8e93', fontSize: 13, padding: '6px 0 10px' }}>None found</div>
+      )
+    }
+    return entries.map((sub) => {
+      const userId = sub.user?.id || sub.user_id
+      const userName = sub.user?.name || 'Unknown User'
+      const planLabel = isTrial ? 'Free Trial' : (sub.plan?.name || 'Plan')
+      const isSelected = selectedEntry?.subscriptionId === sub.id
+
+      return (
+        <List.Item
+          key={sub.id}
+          onClick={() => handleSelectEntry({ userId, userName, subscriptionId: sub.id, planLabel, isTrial })}
+          style={{
+            cursor: 'pointer',
+            padding: '10px 14px',
+            borderLeft: isSelected ? '3px solid #3498ff' : '3px solid transparent',
+            background: isSelected ? '#f0f7ff' : 'transparent',
+            borderRadius: 4,
+            marginBottom: 2,
+          }}
+        >
+          <div style={{ fontWeight: 500, fontSize: 14 }}>{userName}</div>
+          <div style={{ fontSize: 12, color: '#8e8e93', marginTop: 2 }}>{planLabel}</div>
+        </List.Item>
+      )
+    })
+  }
+
   return (
     <div>
-      <PageHeader title="Upload User Design" subtitle="Follow the steps to upload a design for a customer" />
+      <PageHeader
+        title="Upload User Design"
+        subtitle="Select a user with an active plan or free trial to upload designs"
+      />
 
-      <Panel bordered style={{ background: '#fff', marginBottom: 24 }}>
-        <Steps current={step} style={{ marginBottom: 32 }}>
-          <Steps.Item title="Select User" />
-          <Steps.Item title="Select Business" />
-          <Steps.Item title="Verify Subscription" />
-          <Steps.Item title="Upload Design" />
-        </Steps>
+      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+        {/* Left: grouped subscription list */}
+        <Panel bordered style={{ background: '#fff', flex: '0 0 300px', minWidth: 260 }}>
+          {loading ? (
+            <Loader content="Loading..." />
+          ) : (
+            <>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, color: '#333' }}>
+                Active Subscriptions
+              </div>
+              <List hover={false}>{renderEntries(activeSubs, false)}</List>
 
-        {/* Step 1 — Select User */}
-        {step === 0 && (
-          <div>
-            <h5 style={{ marginBottom: 16 }}>Select a customer to upload designs for</h5>
-            {usersLoading ? (
-              <Loader content="Loading users..." />
-            ) : (
-              <SelectPicker
-                data={users}
-                value={ctx.userId}
-                onChange={handleSelectUser}
-                placeholder="Search and select a user..."
-                block
-                style={{ maxWidth: 420 }}
-              />
-            )}
-            <Stack justifyContent="flex-end" style={{ marginTop: 24 }}>
-              <Button appearance="primary" onClick={goNext} disabled={!ctx.userId}>
-                Next: Select Business
-              </Button>
-            </Stack>
-          </div>
-        )}
+              <Divider style={{ margin: '12px 0' }} />
 
-        {/* Step 2 — Select User Business */}
-        {step === 1 && (
-          <div>
-            <h5 style={{ marginBottom: 8 }}>
-              Select the business for <strong>{ctx.userName}</strong>
-            </h5>
-            {bizLoading ? (
-              <Loader content="Loading businesses..." />
-            ) : businesses.length === 0 ? (
-              <Message type="warning" showIcon>This user has no registered businesses.</Message>
-            ) : (
-              <RadioGroup name="business" value={selectedBizId} onChange={handleSelectBusiness}>
-                {businesses.map((b) => (
-                  <Radio key={b.id} value={b.id} style={{ display: 'block', marginBottom: 8 }}>
-                    <strong>{b.brand_name}</strong>
-                    {b.city && <span style={{ color: '#8e8e93', marginLeft: 8, fontSize: 13 }}>{b.city}</span>}
-                  </Radio>
-                ))}
-              </RadioGroup>
-            )}
-            <Stack justifyContent="space-between" style={{ marginTop: 24 }}>
-              <Button appearance="subtle" onClick={goBack}>Back</Button>
-              <Button appearance="primary" onClick={goNext} disabled={!selectedBizId}>
-                Next: Verify Subscription
-              </Button>
-            </Stack>
-          </div>
-        )}
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, color: '#333' }}>
+                Free Trials
+              </div>
+              <List hover={false}>{renderEntries(freeTrials, true)}</List>
+            </>
+          )}
+        </Panel>
 
-        {/* Step 3 — Verify Subscription */}
-        {step === 2 && (
-          <div>
-            <h5 style={{ marginBottom: 16 }}>
-              Checking subscription for <strong>{ctx.brandName}</strong>
-            </h5>
-            {subLoading && <Loader content="Checking subscription status..." />}
-            {subChecked && activeSub && (
-              <Message type="success" showIcon>
-                <strong>Active {activeSub.status === 'free_trial' ? 'Free Trial' : 'Subscription'}</strong>
-                {activeSub.plan?.name && ` — Plan: ${activeSub.plan.name}`}
-                <br />
-                <span style={{ fontSize: 13, color: '#6b7280' }}>Upload is allowed.</span>
-              </Message>
-            )}
-            {subChecked && !activeSub && (
-              <Message type="error" showIcon>
-                <strong>No active subscription or free trial found.</strong>
-                <br />
-                <span style={{ fontSize: 13 }}>This user must have an active plan before designs can be uploaded.</span>
-              </Message>
-            )}
-            <Stack justifyContent="space-between" style={{ marginTop: 24 }}>
-              <Button appearance="subtle" onClick={goBack}>Back</Button>
-              <Button
-                appearance="primary"
-                onClick={goNext}
-                disabled={!subChecked || !activeSub}
-              >
-                Next: Upload Design
-              </Button>
-            </Stack>
-          </div>
-        )}
-
-        {/* Step 4 — Upload Design */}
-        {step === 3 && (
-          <div>
-            <h5 style={{ marginBottom: 16 }}>
-              Upload design files for <strong>{ctx.brandName}</strong>
-            </h5>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>Description</label>
-              <Input
-                as="textarea"
-                rows={3}
-                value={description}
-                onChange={setDescription}
-                placeholder="Describe this design set..."
-                style={{ maxWidth: 520 }}
-              />
+        {/* Right: business select + upload */}
+        <Panel bordered style={{ background: '#fff', flex: 1 }}>
+          {!selectedEntry ? (
+            <div style={{ padding: '48px 0', textAlign: 'center', color: '#8e8e93' }}>
+              Select a user from the list to continue
             </div>
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontWeight: 500, marginBottom: 6 }}>
-                Files <span style={{ color: '#f5222d' }}>*</span>
-              </label>
-              <Uploader
-                fileList={fileList}
-                onChange={setFileList}
-                multiple
-                draggable
-                autoUpload={false}
-                accept="image/*,.pdf,.zip"
-                style={{ maxWidth: 520 }}
-              >
-                <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: '#8e8e93' }}>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>📁</div>
-                  <div>Drag & drop files here, or click to browse</div>
-                  <div style={{ fontSize: 12, marginTop: 4 }}>Supports images, PDF, ZIP</div>
-                </div>
-              </Uploader>
+          ) : (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <span style={{ fontWeight: 600, fontSize: 15 }}>{selectedEntry.userName}</span>
+                <Tag color={selectedEntry.isTrial ? 'cyan' : 'blue'}>{selectedEntry.planLabel}</Tag>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontWeight: 500, marginBottom: 6, fontSize: 13 }}>
+                  Business
+                </label>
+                {businesses.length === 0 ? (
+                  <Message type="warning" showIcon>This user has no registered businesses.</Message>
+                ) : (
+                  <SelectPicker
+                    data={businesses.map((b) => ({ label: b.brand_name, value: b.mnemonic_id }))}
+                    value={selectedBizId}
+                    onChange={(val) => { setSelectedBizId(val); setFileList([]); setDescription('') }}
+                    placeholder="Select a business..."
+                    block
+                    style={{ maxWidth: 400 }}
+                  />
+                )}
+              </div>
+
+              {selectedBizId && (
+                <>
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ display: 'block', fontWeight: 500, marginBottom: 6, fontSize: 13 }}>
+                      Description
+                    </label>
+                    <Input
+                      as="textarea"
+                      rows={3}
+                      value={description}
+                      onChange={setDescription}
+                      placeholder="Describe this design set..."
+                      style={{ maxWidth: 520 }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={{ display: 'block', fontWeight: 500, marginBottom: 6, fontSize: 13 }}>
+                      Files <span style={{ color: '#f5222d' }}>*</span>
+                    </label>
+                    <Uploader
+                      fileList={fileList}
+                      onChange={setFileList}
+                      multiple
+                      draggable
+                      autoUpload={false}
+                      accept="image/*,.pdf,.zip"
+                      style={{ maxWidth: 520 }}
+                    >
+                      <div
+                        style={{
+                          height: 120,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'column',
+                          color: '#8e8e93',
+                        }}
+                      >
+                        <div style={{ fontSize: 28, marginBottom: 8 }}>📁</div>
+                        <div>Drag & drop files here, or click to browse</div>
+                        <div style={{ fontSize: 12, marginTop: 4 }}>Supports images, PDF, ZIP</div>
+                      </div>
+                    </Uploader>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                    <Button appearance="subtle" onClick={() => navigate('/user-designs')} disabled={uploading}>
+                      Cancel
+                    </Button>
+                    <Button
+                      appearance="primary"
+                      onClick={handleUpload}
+                      loading={uploading}
+                      disabled={fileList.length === 0}
+                    >
+                      Upload Design
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
-            <Stack justifyContent="space-between">
-              <Button appearance="subtle" onClick={goBack} disabled={uploading}>Back</Button>
-              <Button
-                appearance="primary"
-                onClick={handleUpload}
-                loading={uploading}
-                disabled={fileList.length === 0}
-              >
-                Upload Design
-              </Button>
-            </Stack>
-          </div>
-        )}
-      </Panel>
+          )}
+        </Panel>
+      </div>
     </div>
   )
 }

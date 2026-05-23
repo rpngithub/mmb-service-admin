@@ -1,10 +1,12 @@
 import axios from 'axios'
 import { BASE_URL } from '@/config/constants'
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '@/utils/tokenUtils'
+import { getAccessToken } from '@/utils/tokenUtils'
+import useAuthStore from '@/store/authStore'
 
 const api = axios.create({
   baseURL: `${BASE_URL}/api`,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 })
 
 let isRefreshing = false
@@ -27,15 +29,21 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config
-    if (error.response?.status !== 401 || original._retry) {
+    const status = error.response?.status
+
+    // Only intercept 401/403 for token refresh; skip retries
+    if ((status !== 401 && status !== 403) || original._retry) {
       return Promise.reject(error)
     }
+
+    // If the refresh endpoint itself returned 401/403, session is dead
     if (original.url?.includes('/auth/refresh')) {
-      clearTokens()
+      useAuthStore.getState().logout()
       window.location.href = '/login'
       return Promise.reject(error)
     }
 
+    // Queue concurrent requests while a refresh is in flight
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         pendingQueue.push({ resolve, reject })
@@ -49,15 +57,32 @@ api.interceptors.response.use(
     isRefreshing = true
 
     try {
-      // const refreshToken = getRefreshToken()
-      const { data } = await axios.post(`${BASE_URL}/api/auth/refresh`)
-      setTokens(data.accessToken)
-      processPendingQueue(null, data.accessToken)
-      original.headers.Authorization = `Bearer ${data.accessToken}`
+      // Use plain axios (not `api`) to avoid triggering this interceptor again
+      const { data } = await axios.post(`${BASE_URL}/api/auth/refresh`, {}, { withCredentials: true })
+      const newToken = data.accessToken
+
+      // Restore token + isAuthenticated in the Zustand store
+      useAuthStore.getState().setAuth(newToken)
+
+      // Refresh only returns a token — re-fetch profile to restore user in the store
+      try {
+        const { data: profileData } = await axios.get(`${BASE_URL}/api/profile`, {
+          headers: { Authorization: `Bearer ${newToken}` },
+        })
+        const user = profileData?.user || profileData
+        useAuthStore.getState().setUser(user)
+      } catch {
+        // Profile fetch failed but the token is valid.
+        // The original request will still be retried; user stays as-is in store.
+      }
+
+      processPendingQueue(null, newToken)
+      original.headers.Authorization = `Bearer ${newToken}`
       return api(original)
     } catch (err) {
       processPendingQueue(err, null)
-      clearTokens()
+      // Clears both localStorage tokens AND resets Zustand auth state
+      useAuthStore.getState().logout()
       window.location.href = '/login'
       return Promise.reject(err)
     } finally {

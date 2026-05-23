@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Table, Button, Panel, Stack, IconButton, useToaster, Message, Input, InputGroup } from 'rsuite'
+import { Table, Button, Panel, Stack, IconButton, useToaster, Message, Input, InputGroup, Pagination } from 'rsuite'
 import PlusIcon from '@rsuite/icons/Plus'
 import EditIcon from '@rsuite/icons/Edit'
 import TrashIcon from '@rsuite/icons/Trash'
@@ -12,17 +12,21 @@ import { getUserBusinesses, deleteUserBusiness } from '@/api/userBusinessesApi'
 
 const { Column, HeaderCell, Cell } = Table
 
+const DEFAULT_LIMIT = 10
+
 const UserBusinessesPage = () => {
   const toaster = useToaster()
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(DEFAULT_LIMIT)
   const [modalOpen, setModalOpen] = useState(false)
   const [editRecord, setEditRecord] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
-  const fetch = useCallback(async () => {
+  const fetchRecords = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await getUserBusinesses()
@@ -34,18 +38,23 @@ const UserBusinessesPage = () => {
     }
   }, [])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => { fetchRecords() }, [fetchRecords])
+
+  // Reset to page 1 whenever search or limit changes
+  useEffect(() => { setPage(1) }, [search, limit])
 
   const filtered = records.filter((r) =>
     !search || r.brand_name?.toLowerCase().includes(search.toLowerCase())
   )
+  const paged = filtered.slice((page - 1) * limit, page * limit)
 
   const handleDelete = async () => {
     setDeleteLoading(true)
     try {
       await deleteUserBusiness(deleteTarget.id)
       toaster.push(<Message type="success" showIcon closable>Deleted</Message>, { placement: 'topCenter' })
-      setDeleteTarget(null); fetch()
+      setDeleteTarget(null)
+      fetchRecords()
     } catch {
       toaster.push(<Message type="error" showIcon closable>Failed</Message>, { placement: 'topCenter' })
     } finally {
@@ -71,9 +80,11 @@ const UserBusinessesPage = () => {
             <InputGroup.Button><SearchIcon /></InputGroup.Button>
           </InputGroup>
         </Stack>
-        <Table data={filtered} loading={loading} height={500} bordered cellBordered rowKey="id">
+
+        <Table data={paged} loading={loading} autoHeight bordered cellBordered rowKey="id">
           <Column flexGrow={1} minWidth={160}><HeaderCell>Brand Name</HeaderCell><Cell dataKey="brand_name" /></Column>
           <Column flexGrow={1} minWidth={120}><HeaderCell>User</HeaderCell><Cell>{(row) => row.user?.name || row.user_id}</Cell></Column>
+          <Column flexGrow={1} minWidth={140}><HeaderCell>Business Category</HeaderCell><Cell>{(row) => row.business?.name || row.business_other || '—'}</Cell></Column>
           <Column width={140}><HeaderCell>City</HeaderCell><Cell dataKey="city" /></Column>
           <Column width={120}><HeaderCell>Delivery</HeaderCell><Cell dataKey="delivery_preference" /></Column>
           <Column width={120}><HeaderCell>Status</HeaderCell><Cell>{(row) => <StatusBadge status={row.branding_status} />}</Cell></Column>
@@ -88,8 +99,21 @@ const UserBusinessesPage = () => {
             </Cell>
           </Column>
         </Table>
+
+        <div style={{ paddingTop: 16, borderTop: '1px solid #f2f2f5' }}>
+          <Pagination
+            total={filtered.length}
+            limit={limit}
+            limitOptions={[10, 20, 50]}
+            activePage={page}
+            onChangePage={setPage}
+            onChangeLimit={(v) => setLimit(v)}
+            layout={['total', '-', 'limit', '|', 'pager']}
+          />
+        </div>
       </Panel>
-      <UserBusinessFormModal open={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetch} userBusiness={editRecord} />
+
+      <UserBusinessFormModal open={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchRecords} userBusiness={editRecord} />
       <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleteLoading} message={`Delete "${deleteTarget?.brand_name}"?`} />
     </div>
   )

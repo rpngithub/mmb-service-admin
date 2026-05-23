@@ -75,7 +75,7 @@ const DashboardPage = () => {
 
         const activeSubs = subs.filter((s) => s.status === 'active')
         const planMap = Object.fromEntries(plans.map((p) => [p.id, p]))
-        const revenue = activeSubs.reduce((sum, s) => sum + (planMap[s.plan_id]?.price || 0), 0)
+        const revenue = activeSubs.reduce((sum, s) => sum + (Number(planMap[s.plan_id]?.price) || 0), 0)
 
         // Signups per day (last 30 days)
         const signupData = groupByDay(users, 'created_at', 30)

@@ -14,6 +14,10 @@ const STATUS_COLORS = {
   ONLY_LOGO: 'yellow',
   IN_PROGRESS: 'blue',
   PENDING: 'orange',
+  open: 'blue',
+  in_progress: 'yellow',
+  resolved: 'green',
+  closed: 'default',
 }
 
 const StatusBadge = ({ status }) => {
