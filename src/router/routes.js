@@ -15,6 +15,8 @@ export const UserDetailPage = lazy(() => import('@/pages/users/UserDetailPage'))
 export const PlansPage = lazy(() => import('@/pages/plans/PlansPage'))
 export const SubscriptionsPage = lazy(() => import('@/pages/subscriptions/SubscriptionsPage'))
 export const SubscriptionDetailPage = lazy(() => import('@/pages/subscriptions/SubscriptionDetailPage'))
+export const FreeTrialsPage = lazy(() => import('@/pages/freeTrials/FreeTrialsPage'))
+export const FreeTrialDetailPage = lazy(() => import('@/pages/freeTrials/FreeTrialDetailPage'))
 export const DesignsPage = lazy(() => import('@/pages/designs/DesignsPage'))
 export const BusinessesPage = lazy(() => import('@/pages/businesses/BusinessesPage'))
 export const UserBusinessesPage = lazy(() => import('@/pages/userBusinesses/UserBusinessesPage'))
@@ -31,6 +33,8 @@ export const ROUTES = [
   { path: '/plans', component: PlansPage, roles: [ADMIN] },
   { path: '/subscriptions', component: SubscriptionsPage, roles: [ADMIN] },
   { path: '/subscriptions/:id', component: SubscriptionDetailPage, roles: [ADMIN, CUSTOMER_SUPPORT] },
+  { path: '/free-trials', component: FreeTrialsPage, roles: [ADMIN] },
+  { path: '/free-trials/:id', component: FreeTrialDetailPage, roles: [ADMIN] },
   { path: '/designs', component: DesignsPage, roles: [ADMIN, DESIGNER] },
   { path: '/businesses', component: BusinessesPage, roles: [ADMIN] },
   { path: '/user-businesses', component: UserBusinessesPage, roles: [ADMIN] },
