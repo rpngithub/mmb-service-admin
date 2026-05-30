@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { key: '/users', label: 'Users', icon: <PeopleIcon />, roles: [ADMIN, CUSTOMER_SUPPORT] },
   { key: '/plans', label: 'Plans', icon: <ListIcon />, roles: [ADMIN] },
   { key: '/subscriptions', label: 'Subscriptions', icon: <DetailIcon />, roles: [ADMIN] },
+  { key: '/free-trials', label: 'Free Trials', icon: <DetailIcon />, roles: [ADMIN] },
   { key: '/businesses', label: 'Businesses', icon: <StorageIcon />, roles: [ADMIN] },
   { key: '/user-businesses', label: 'User Businesses', icon: <FolderIcon />, roles: [ADMIN] },
   { key: '/user-designs', label: 'User Designs', icon: <ImageIcon />, roles: [ADMIN, DESIGNER] },

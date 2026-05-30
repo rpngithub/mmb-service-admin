@@ -6,7 +6,7 @@ import {
 } from 'rsuite'
 import PageHeader from '@/components/common/PageHeader'
 import { getUserBusinesses } from '@/api/userBusinessesApi'
-import { getSubscriptions } from '@/api/subscriptionsApi'
+import { getSubscriptions, getFreeTrials } from '@/api/subscriptionsApi'
 import { uploadUserDesign } from '@/api/userDesignsApi'
 
 const isNotExpired = (sub) => {
@@ -33,11 +33,12 @@ const UploadUserDesignPage = () => {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([getSubscriptions(), getUserBusinesses()])
-      .then(([subRes, bizRes]) => {
-        const all = subRes.data?.subscriptions || subRes.data || []
-        setActiveSubs(all.filter((s) => s.status === 'active' && isNotExpired(s)))
-        setFreeTrials(all.filter((s) => s.status === 'free_trial' && isNotExpired(s)))
+    Promise.all([getSubscriptions(), getFreeTrials(), getUserBusinesses()])
+      .then(([subRes, trialRes, bizRes]) => {
+        const allSubs = subRes.data?.subscriptions || subRes.data || []
+        const allTrials = trialRes.data?.freeTrials || trialRes.data?.subscriptions || trialRes.data || []
+        setActiveSubs(allSubs.filter((s) => s.status === 'active' && isNotExpired(s)))
+        setFreeTrials(allTrials.filter((s) => isNotExpired(s)))
         setAllBusinesses(bizRes.data?.userBusinesses || bizRes.data || [])
       })
       .catch(() => {})
@@ -69,7 +70,7 @@ const UploadUserDesignPage = () => {
       navigate('/user-designs')
     } catch (err) {
       toaster.push(
-        <Message type="error" showIcon closable>{err.response?.data?.message || 'Upload failed'}</Message>,
+        <><Message type="error" showIcon closable>{err.response?.data?.message || 'Upload failed'}</Message></>,
         { placement: 'topCenter' }
       )
     } finally {
