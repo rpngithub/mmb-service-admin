@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build:prod": "vite build --mode production",
+    "preview": "vite preview",
+    "preview:prod": "vite preview --mode production",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@rsuite/icons": "^1.4.0",
