@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Drawer, Form, Input, InputNumber, Toggle, TagInput, SelectPicker, Button, useToaster, Message } from 'rsuite'
+import { Drawer, Form, Input, InputNumber, Toggle, SelectPicker, Button, useToaster, Message } from 'rsuite'
 import FormField from '@/components/common/FormField'
+import FeatureListEditor from './FeatureListEditor'
 import { createPlan, updatePlan } from '@/api/plansApi'
 
 const UNITS = [
-  { label: 'Day', value: 'DAY' },
   { label: 'Month', value: 'MONTH' },
   { label: 'Year', value: 'YEAR' },
 ]
@@ -28,7 +28,18 @@ const PlanFormModal = ({ open, onClose, onSuccess, plan }) => {
     if (!form.name || !form.price) return
     setLoading(true)
     try {
-      const payload = { ...form, price: Number(form.price), original_price: Number(form.original_price), duration: Number(form.duration) }
+      const payload = {
+        name: form.name,
+        description: form.description || '',
+        price: Number(form.price),
+        duration: Number(form.duration),
+        duration_unit: form.duration_unit,
+        features: (form.features || []).map((f) => f.trim()).filter(Boolean),
+        popular: !!form.popular,
+      }
+      if (form.original_price !== '' && form.original_price != null) {
+        payload.original_price = Number(form.original_price)
+      }
       isEdit ? await updatePlan(plan.id, payload) : await createPlan(payload)
       toaster.push(<Message type="success" showIcon closable>{isEdit ? 'Plan updated' : 'Plan created'}</Message>, { placement: 'topCenter' })
       onSuccess()
@@ -76,8 +87,7 @@ const PlanFormModal = ({ open, onClose, onSuccess, plan }) => {
             </div>
           </div>
           <FormField label="Features" name="features">
-            <TagInput value={form.features} onChange={set('features')} trigger={['Enter']} block />
-            <Form.HelpText>Press Enter to add a feature</Form.HelpText>
+            <FeatureListEditor value={form.features} onChange={set('features')} />
           </FormField>
           <FormField label="Mark as Popular" name="popular">
             <Toggle checked={form.popular} onChange={set('popular')} />
