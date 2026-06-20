@@ -61,7 +61,7 @@ const PlansPage = () => {
         ]}
       />
       <Panel bordered style={{ background: '#fff' }}>
-        <Table data={plans} loading={loading} height={500} bordered cellBordered rowKey="id">
+        <Table data={plans} loading={loading} height={500} bordered cellBordered rowKey="id" rowClassName={(row) => (row?.is_deleted ? 'plan-row-deleted' : '')}>
           <Column flexGrow={1} minWidth={140}><HeaderCell>Name</HeaderCell><Cell dataKey="name" /></Column>
           <Column width={120}><HeaderCell>Price</HeaderCell><Cell>{(row) => formatCurrency(row.price)}</Cell></Column>
           <Column width={120}><HeaderCell>Original</HeaderCell><Cell>{(row) => formatCurrency(row.original_price)}</Cell></Column>
@@ -79,12 +79,19 @@ const PlansPage = () => {
               )}
             </Cell>
           </Column>
+          <Column width={90}><HeaderCell>Status</HeaderCell>
+            <Cell>
+              {(row) => row.is_deleted
+                ? <Tag color="red" size="sm">Deleted</Tag>
+                : <Tag color="green" size="sm">Active</Tag>}
+            </Cell>
+          </Column>
           <Column width={100} fixed="right"><HeaderCell>Actions</HeaderCell>
             <Cell>
               {(row) => (
                 <Stack spacing={4}>
-                  <IconButton icon={<EditIcon />} size="xs" appearance="subtle" onClick={() => { setEditPlan(row); setModalOpen(true) }} />
-                  <IconButton icon={<TrashIcon />} size="xs" appearance="subtle" color="red" onClick={() => setDeleteTarget(row)} />
+                  <IconButton icon={<EditIcon />} size="xs" appearance="subtle" disabled={row.is_deleted} onClick={() => { setEditPlan(row); setModalOpen(true) }} />
+                  <IconButton icon={<TrashIcon />} size="xs" appearance="subtle" color="red" disabled={row.is_deleted} onClick={() => setDeleteTarget(row)} />
                 </Stack>
               )}
             </Cell>

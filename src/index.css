@@ -12,3 +12,8 @@ body {
   width: 100%;
   min-height: 100vh;
 }
+
+.plan-row-deleted .rs-table-cell {
+  opacity: 0.55;
+  background-color: #fafafa;
+}
